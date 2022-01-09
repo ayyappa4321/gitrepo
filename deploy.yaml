@@ -1,0 +1,70 @@
+- name : creating app layer 
+  hosts : prod
+  become : yes
+  vars :
+      USERNAME : tom_user
+      TOM_URL : https://dlcdn.apache.org/tomcat/tomcat-10/v10.0.14/bin/apache-tomcat-10.0.14.tar.gz
+      TOM_DIR : /tomcat/
+      WEB_APP : /tomcat/apache-tomcat-10.0.14/webapps
+      WAR_URL : http://34.125.53.243:8081/repository/maven-snapshots/app/pro/5.0-SNAPSHOT/pro-5.0-20220106.025010-4.war
+      WEB_DEST : /tomcat/apache-tomcat-10.0.14/webapps/ks.war
+  tasks :
+     - name : create an user for tomcat
+       ansible.builtin.user:
+                   name : "{{USERNAME}}"
+
+
+     - name: Create a directory if it does not exist
+       ansible.builtin.file:
+            path: /tomcat
+            state: directory
+            owner : "{{USERNAME}}"
+            group : "{{USERNAME}}"
+            mode: '0755'              
+
+     - name : downloading tomcat
+       ansible.builtin.unarchive:
+          src: "{{TOM_URL}}"
+          dest: "{{TOM_DIR}}"
+          remote_src: yes
+       become_user : "{{USERNAME}}"
+
+
+     - name : find the files and dir from webapps
+       find :
+         paths : "{{WEB_APP}}"
+         file_type : any
+       register : out
+
+
+     - name : removing old artifacts 
+       file :
+         path : "{{WEB_APP}}"
+         state : "{{item}}"
+         owner : "{{USERNAME}}"
+         group : "{{USERNAME}}"
+       loop :
+         - absent
+         - directory
+       
+       
+     - name : downloading war pack 
+       get_url :
+         url : "{{WAR_URL}}"
+         dest : "{{WEB_DEST}}"
+       become_user : "{{USERNAME}}"
+          
+
+     - name : check tomcat is ruuning or not
+       shell : ps -ef | grep tomcat | grep -v grep
+       register : out
+       ignore_errors : true
+       become_user : "{{USERNAME}}"
+
+     - name : starting  tomcat
+       shell : "nohup sh /tomcat/apache-tomcat-10.0.14/bin/startup.sh "
+       when : out is failed
+
+     - name : restarting tomcat 
+       shell : "nohup sh /tomcat/apache-tomcat-10.0.14/bin/shutdown.sh  &&   nohup sh /tomcat/apache-tomcat-10.0.14/bin/startup.sh"
+       when : out is success
