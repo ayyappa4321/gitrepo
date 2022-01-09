@@ -6,7 +6,6 @@
       TOM_URL : https://dlcdn.apache.org/tomcat/tomcat-10/v10.0.14/bin/apache-tomcat-10.0.14.tar.gz
       TOM_DIR : /tomcat/
       WEB_APP : /tomcat/apache-tomcat-10.0.14/webapps
-      WAR_URL : http://34.125.53.243:8081/repository/maven-snapshots/app/pro/5.0-SNAPSHOT/pro-5.0-20220106.025010-4.war
       WEB_DEST : /tomcat/apache-tomcat-10.0.14/webapps/ks.war
   tasks :
      - name : create an user for tomcat
